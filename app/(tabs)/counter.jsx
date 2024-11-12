@@ -4,10 +4,10 @@ import { useRoute } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import dayjs from 'dayjs';
+import { Entypo } from '@expo/vector-icons';
 
 const Counter = () => {
     const [count, setCount] = useState(0);
-    const [action, setAction] = useState('increment');
     const route = useRoute();
     const { selectedDate } = route.params;
 
@@ -34,11 +34,7 @@ const Counter = () => {
         if (!isToday) return;
 
         let newCount = count;
-        if (action === 'increment') {
-            newCount += 1;
-        } else if (action === 'decrement') {
-            newCount = Math.max(newCount - 1, 0);
-        }
+        newCount += 1;
         setCount(newCount);
         try {
             await AsyncStorage.setItem(`counter_${selectedDate}`, newCount.toString());
@@ -58,8 +54,23 @@ const Counter = () => {
         }
     };
 
+    const handleDecrement = async () => {
+        if (!isToday) return;
+        if (count === 0) {
+            return;
+        }
+        let newCount = count;
+        newCount -= 1;
+        setCount(newCount);
+        try {
+            await AsyncStorage.setItem(`counter_${selectedDate}`, newCount.toString());
+        } catch (e) {
+            console.error("Failed to save count.", e);
+        }
+    };
+
     return (
-        <SafeAreaView className="flex-1 justify-between bg-gray-50 px-4">
+        <SafeAreaView className="flex-1 justify-between bg-gray-50 px-4 relative">
             <TouchableOpacity onPress={handlePress} className="flex-1 justify-center items-center">
                 <View className="justify-center items-center bg-white rounded-lg p-10 shadow-xl">
                     <Text className="text-lg text-gray-600 mb-5">
@@ -69,20 +80,22 @@ const Counter = () => {
                 </View>
             </TouchableOpacity>
 
+            <TouchableOpacity className=" absolute top-12 right-5">
+                <Entypo name="dots-three-vertical" size={27} color="black" />
+            </TouchableOpacity>
+
             {isToday && (
                 <View className="flex-row justify-around mb-10">
-                    <TouchableOpacity onPress={() => setAction('increment')} className="bg-blue-500 rounded-full px-6 py-3">
-                        <Text className="text-white text-3xl">+</Text>
+                    <TouchableOpacity onPress={() => handleDecrement()} disabled={count === 0} className="bg-red-500 rounded-full h-14 w-14 justify-center items-center">
+                        <Text className="text-white text-5xl">-</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={() => setAction('decrement')} className="bg-red-500 rounded-full px-6 py-3">
-                        <Text className="text-white text-3xl">-</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={handleReset} className="bg-gray-500 rounded-full justify-center items-center w-[100px]">
+                    <TouchableOpacity onPress={handleReset} disabled={count === 0} className="bg-gray-500 rounded-full justify-center items-center w-[100px] h-14">
                         <Text className="text-white text-2xl">Reset</Text>
                     </TouchableOpacity>
                 </View>
-            )}
-        </SafeAreaView>
+            )
+            }
+        </SafeAreaView >
     );
 };
 
