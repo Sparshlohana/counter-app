@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, Modal } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import dayjs from 'dayjs';
 import { Entypo } from '@expo/vector-icons';
+import { MaterialIcons } from '@expo/vector-icons';
 
 const Counter = () => {
     const [count, setCount] = useState(0);
+    const [modalVisible, setModalVisible] = useState(false);
+    const [increment, setIncrement] = useState(1);
     const route = useRoute();
     const { selectedDate } = route.params;
 
@@ -33,8 +36,7 @@ const Counter = () => {
     const handlePress = async () => {
         if (!isToday) return;
 
-        let newCount = count;
-        newCount += 1;
+        let newCount = count + increment;
         setCount(newCount);
         try {
             await AsyncStorage.setItem(`counter_${selectedDate}`, newCount.toString());
@@ -56,17 +58,24 @@ const Counter = () => {
 
     const handleDecrement = async () => {
         if (!isToday) return;
-        if (count === 0) {
-            return;
+
+        let newCount = count - increment;
+        if (newCount < 0) {
+            newCount = 0;
         }
-        let newCount = count;
-        newCount -= 1;
+
         setCount(newCount);
         try {
             await AsyncStorage.setItem(`counter_${selectedDate}`, newCount.toString());
         } catch (e) {
             console.error("Failed to save count.", e);
         }
+    };
+
+
+    const selectIncrement = (value) => {
+        setIncrement(value);
+        setModalVisible(false);
     };
 
     return (
@@ -80,9 +89,36 @@ const Counter = () => {
                 </View>
             </TouchableOpacity>
 
-            <TouchableOpacity className=" absolute top-12 right-5">
+            <TouchableOpacity onPress={() => setModalVisible(true)} className="absolute top-12 right-5">
                 <Entypo name="dots-three-vertical" size={27} color="black" />
             </TouchableOpacity>
+
+            <Modal
+                transparent
+                visible={modalVisible}
+                onRequestClose={() => setModalVisible(false)}
+                animationType="fade"
+            >
+                <View className="flex-1 justify-center items-center bg-black/40">
+                    <View className="bg-white rounded-lg p-6 w-3/4 shadow-lg">
+                        <View className="flex-row justify-between items-center mb-4">
+                            <Text className="text-lg font-semibold">Select Increment</Text>
+                            <TouchableOpacity onPress={() => setModalVisible(false)}>
+                                <MaterialIcons name="close" size={24} color="black" />
+                            </TouchableOpacity>
+                        </View>
+                        {[1, 25, 50, 100].map((value) => (
+                            <TouchableOpacity
+                                key={value}
+                                onPress={() => selectIncrement(value)}
+                                className="p-3 my-2 rounded-lg border border-gray-200 bg-gray-100"
+                            >
+                                <Text className="text-center text-lg text-gray-700 font-medium">{`+${value}`}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </View>
+            </Modal>
 
             {isToday && (
                 <View className="flex-row justify-around mb-10">
@@ -93,9 +129,8 @@ const Counter = () => {
                         <Text className="text-white text-2xl">Reset</Text>
                     </TouchableOpacity>
                 </View>
-            )
-            }
-        </SafeAreaView >
+            )}
+        </SafeAreaView>
     );
 };
 
